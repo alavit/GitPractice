@@ -1,11 +1,14 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-import "openzeppelin-contracts-08/token/ERC20/IERC20.sol";
-import "openzeppelin-contracts-08/token/ERC20/ERC20.sol";
-import "openzeppelin-contracts-08/access/Ownable.sol";
+import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
+import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
+import "@openzeppelin/contracts/access/Ownable.sol";
 
-contract Dex is Ownable {
+using SafeERC20 for IERC20;
+
+abstract contract Dex is Ownable {
     address public token1;
     address public token2;
     constructor() {}
@@ -28,7 +31,11 @@ contract Dex is Ownable {
      * @param   amount The amount of tokens to be transferred.
      */
     function addLiquidity(address token_address, uint amount) public onlyOwner {
-        IERC20(token_address).transferFrom(msg.sender, address(this), amount);
+        IERC20(token_address).safeTransferFrom(
+            msg.sender,
+            address(this),
+            amount
+        );
     }
 
     /**
@@ -49,9 +56,9 @@ contract Dex is Ownable {
             "Not enough to swap"
         );
         uint swapAmount = getSwapPrice(from, to, amount);
-        IERC20(from).transferFrom(msg.sender, address(this), amount);
-        IERC20(to).approve(address(this), swapAmount);
-        IERC20(to).transferFrom(address(this), msg.sender, swapAmount);
+        IERC20(from).safeTransferFrom(msg.sender, address(this), amount);
+        IERC20(to).forceApprove(address(this), swapAmount);
+        IERC20(to).safeTransferFrom(address(this), msg.sender, swapAmount);
     }
 
     /**
